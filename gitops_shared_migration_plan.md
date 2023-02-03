@@ -39,6 +39,9 @@ Set ENV vars for:
 * Apply updated manifests to openshift-bcgov-gitops-shared
 * Ensure that all apps are synced
 
+## Scale down resources in argocd-shared
+* In order to avoid confusion or conflicting configurations, shut down Argo CD in the old 'argocd-shared' namespace.
+
 ## Update Route (automation specialist)
 * Remove 'argocd-shared' route from argocd-shared namespace
 * Add 'argocd-shared' route in openshift-bcgov-gitops-shared
