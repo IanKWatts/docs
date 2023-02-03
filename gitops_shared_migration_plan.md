@@ -18,7 +18,9 @@ Set ENV vars for:
 * ARGOCD_OIDC_CLIENT_SECRET: Base64-encoded password of the OIDC client
 * ARGOCD_GITHUB_DEPLOY_KEY:  Base64-encoded private SSH key for GitHub access
 * SEALED_SECRETS_CERT:       Path to the cluster's certificate file
+
 `oc login` to cluster 
+
 `ansible-playbook -i inventory/clustername -e do_gitops=false playbooks/gitops/install.yaml`
 
 ## CCM push (cluster admins)
