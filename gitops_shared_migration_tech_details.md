@@ -1,10 +1,13 @@
 # Migration of shared Argo CD to GitOps Operator
 These are the technical details for the migration to the GitOps Operator for the shared instance of Argo CD.
+
 This doc is a companion to the more high-level <a href="gitops_shared_migration_plan.md">migration plan</a>.
 
 ## CCM pre-migration preparation
 The CCM release should include an update enabling the setup of the shared instance of the GitOps Operator.
-In the CCM repo, update inventory/group_vars/all/all.yaml settings gitops_shared to true.
+
+In the CCM repo, update `inventory/group_vars/all/all.yaml` setting `gitops_shared` to true.
+
 `gitops_shared: true`
 
 ## Verify installation
@@ -52,6 +55,7 @@ github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAA
 The CCM push includes a configuration change for the Warden Operator, setting ARGOCD_NAMESPACE to 'openshift-bcgov-gitops-shared'.  Verify that this parameter is set:
 * Namespace: openshift-bcgov-warden-operator
 * Deployment: warden-operator-controller-manager
+
 The latest build of the Warden Operator includes a change to apply a label to any namespaces used by Argo CD projects, based on the presence of a `GitOpsTeam` or `GitOpsAlliance` resource.
 
 ## Export Applications
@@ -89,7 +93,7 @@ Add argocd-shared Route to gitops-shared in CCM
 * Manually generate and apply manifests for gitops-shared
 * Run script to export Applications
   - then update namespace from argocd-shared --> openshift-bcgov-gitops-shared
-	perl -pi -e 's|namespace: argocd-shared|namespace: openshift-bcgov-gitops-shared|' cluster/*.yaml
+    - `perl -pi -e 's|namespace: argocd-shared|namespace: openshift-bcgov-gitops-shared|' cluster/*.yaml`
 * Update Warden Operator with new namespace and version
   - In Deployment warden-operator-controller-manager as an ENV var
 * Check that Project is created
