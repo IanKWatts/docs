@@ -68,6 +68,7 @@ spec:
 Once the average RAM utilization exceeds 1500Mi, or average CPU utilization exceeds 70% of maximum, the HPA will scale up the deployment from three pods to four.  If the avarage utilization again rises past the threshold, a fifth pod will be created.  If the average utilization then drops below the threshold for several minutes, it will incrementally scaled down the deployment.  There is a brief delay in the scaling down to prevent rapid scaling up and down of pods.
 
 **Check HPA status**
+
 Periodically check the status of your HPA with 'oc describe'.
 ```
 $ oc describe hpa sample-app
@@ -118,6 +119,7 @@ This assumes that pods in the Deployment or StatefulSet have a label `app` with 
 Never set `minAvailable` to the minimum number of pods for the deployment.  If you do, it will interfere with cluster maintenance by preventing worker nodes from being taken offline.
 
 **Check PDB status**
+
 Once established, periodically check on the status of your PDB.  Ensure that the total number of pods is correct and that the selector is accurate.
 ```
 $ oc describe pdb sample-app
@@ -143,25 +145,29 @@ Databases in particular require careful setup in OpenShift.  They must be highly
 If something unexpected were to happen in your namespace, such as accidental deletion of resources, would you be able to restore them?  Given a well-configured CI/CD pipeline, many resources can be easily recreated, but some resources require extra care.  In order to ensure that your apps can be fully restored after an unfortunate incident of some kind, implement the following preventative measures.
 
 #### Secrets
-Secrets are often omitted from CI/CD pipelines, because a secure pipeline setup requires the use of Sealed Secrets (link?).  If the Secret containing your database password were accidentally altered or deleted, would you be able to restore it?  Would your team be able to restore it in your absence?
+Secrets are often omitted from CI/CD pipelines, because a secure pipeline setup requires the omission of secrets or the use of a system like Sealed Secrets.  If the Secret containing your database password were accidentally altered or deleted, would you be able to restore it?  Would your team be able to restore it in your absence?
 
 * Use Vault
     * Vault is an on-cluster password management system that is available to all users.  It uses encryption at rest, is frequently backed up, maintains change history, and is a highly available service.  See the Security section (link) for more information.
-* Use Sealed Secrets?
 * Use a local password management system
     * In a pinch, you could maintain a local password management file, though this is a less useful approach, because the file must be available to any team members involved in a recovery effort and it would not be part of your pipelines.
+
 **Never store passwords in plain text, even in a private repository.**
 
 #### Storage
 Your storage on the platform is not automatically backed up, with the exception of the `netapp-file-backup` storage class, which is not used for production workloads and is typically used only for database backup containers.  
 
 **S3**
+
 Amazon S3 buckets reside outside of the OpenShift clusters and are a good option for storing backup copies of non-sensitive data.  Use an image with the 'minio' client installed to copy data to your S3 bucket, preferably by cron job.  S3 buckets can be procured through your ministry's IMB; they are not offered directly from the Platform Services team.
 
 **Database backups**
+
 The community supported [backup-container](https://github.com/bcgov/backup-container) is an image designed to support the automated backup of various types of database.  It is easy to set up and is well understood by our community of users, so you will be able to get support if needed.
 
-If you need to recover your backup volume from the platform-provided backup, **you will need the name of the volume, not just the PVC name.**  You can get the volume name from the PVC details.  For example:
+**PersistentVolume recovery**
+
+If you have a PVC using the 'netapp-file-backup' storage class, it could be recovered from backup, as that storage class is automatically backed up.  If you need to recover one of these backup volumes, **you will need the name of the PersistentVolume, not just the PVC name.**  You can get the volume name from the PVC details.  For example:
 ```
 $ oc get pvc
 NAME           STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS           AGE
@@ -173,21 +179,23 @@ For more details, see the [Restoring Backup Volumes on OpenShift](https://docs.d
 * For extra protection, copy your DB backups to an S3 bucket.
 
 **Images**
+
 Do your applications pull images directly from Docker Hub, ghcr.io, or another off-cluster source?  Can you be sure that the same version of the image will be available as long as you need it?  Sometimes older images are removed from container repositories, perhaps because they are no longer supported or due to security vulnerabilities.  To be sure that your images will be always available, and to protect against possible network issues preventing their retrieval, store your images in Artifactory.  See the Images section of this document for more information.
 
 ## Periodic HA Testing<a name="ha-testing"></a>
-After configuring HPAs and PDBs for your applications, test them periodically to make sure that they work the way you expect and that your application remains available.  If you're testing in your Test or Dev environment, make sure they're configured the same as Prod so that you can test that same Prod configuration.
+After configuring HPAs and PDBs for your applications, test them periodically to make sure that they work the way that you expect and that your application remains available.  If you're testing in your Test or Dev environment, make sure they're configured the same as Prod so that you can test your Prod configuration.
 * Delete a pod in a Deployment or StatefulSet
 * In a DB replica set, delete a secondary member
 * Delete the primary member of a DB replica set
-Does the application or DB remain available?
+    * Does the application or DB remain available?
 * Test your PDB by trying to delete more pods than allowed.  Does it work as expected?
 
 **Load testing**
-If you need to run a load test against your application, first check with the Platform Services to ensure that the timing and scope of the test will not impact other users of the platform.
+
+If you need to run a load test against your application, first check with the Platform Services team to ensure that the timing and scope of the test will not impact other users of the platform.
 
 ## CI/CD Pipeline<a name="cicd-pipeline"></a>
-Users of the platform have CI/CD pipelines using [Tekton](https://docs.developer.gov.bc.ca/deploy-an-application/#continuous-deployment-and-maintenance) (OpenShift Pipelines), GitHub Actions, and [ArgoCD](https://github.com/BCDevOps/openshift-wiki/tree/master/docs/ArgoCD).
+Users of the platform have CI/CD pipelines using [Tekton](https://docs.developer.gov.bc.ca/deploy-an-application/#continuous-deployment-and-maintenance) (OpenShift Pipelines), [GitHub Actions](https://docs.github.com/en/actions), and [ArgoCD](https://github.com/BCDevOps/openshift-wiki/tree/master/docs/ArgoCD).
 
 Review your pipelines from time to time.
 * Are there any resources that were manually created that should be added to your pipeline?
