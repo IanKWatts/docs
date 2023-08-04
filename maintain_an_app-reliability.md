@@ -2,7 +2,15 @@
 
 The OpenShift platform, and Kubernetes in general, are designed as dynamic systems in which traditional "set it and forget it" approaches to server and application maintenance are not appropriate.  Your applications' ecosystems must be tolerant of the unplanned loss of running pods and include strategies for the continuous verification of both deployment processes and fault tolerance.
 
-## HPAs - Horizontal Pod Autoscalers
+Areas of interest here are:
+* [Horizontal Pod Autoscalers](#hpa)
+* [Pod Disruption Budgets](#pdb)
+* [Databases](#databases)
+* [Recoverability](#recoverability)
+* [HA Testing](#ha-testing)
+* [CI/CD Pipeline](#cicd-pipeline)
+
+## HPAs - Horizontal Pod Autoscalers<a name="hpa"></a>
 Your applications may experience a wide range of traffic load.  In order to allow for spikes in traffic that might overwhelm your default deployment, while not unnecessarily consuming extra resources at all times, configure a horizontal pod autoscaler (HPA).  You'll set the minimum number of pods (replicas) to run, and define conditions under which it should add more pods automatically.  The extra pods will still have to fit within the resource quotas of your namespace, so you'll need to review the normal resource consumption of your Deployment or StatefulSet and ensure that an increase of X number of pods will not cause pod startup failures due to the quotas.
 
 Requirements:
@@ -88,7 +96,7 @@ For more information, see:
 
 https://docs.openshift.com/container-platform/latest/nodes/pods/nodes-pods-autoscaling.html
 
-## PDBs - Pod Disruption Budgets
+## PDBs - Pod Disruption Budgets<a name="pdb"></a>
 Cluster maintenance happens during business hours and the expectation is that applications on the platform can tolerate the sequential cycling of worker nodes.  Sometimes this happens in rapid succession - if your application takes time to start up and pass all readiness and liveness probes, then a relocated pod may still be starting up and not ready for service when another of your deployment's pods is terminated, which could cause an outage of your application.  A pod disruption budget (PDB) allows you to specify the minimum number of pods that can be offline at a given time to prevent this scenario.
 
 **Warning:** A badly configured PDB can interfere with cluster maintenance.  For the sake of those who maintain the platform, and those who use it, please configure your PDB carefully.
@@ -125,13 +133,13 @@ Status:
 Events:                   <none>
 ```
 
-## Databases
+## Databases<a name="databases"></a>
 Databases in particular require careful setup in OpenShift.  They must be highly available and configured for replication.  See the following documentation for details on the care and maintenance of HA databases.
 * [High availability database clusters](https://docs.developer.gov.bc.ca/high-availability-database-clusters/)
 * [Open-source database technologies](https://docs.developer.gov.bc.ca/opensource-database-technologies/)
 * [Database backup best practices](https://docs.developer.gov.bc.ca/database-backup-best-practices/)
 
-## Recoverability
+## Recoverability<a name="recoverability"></a>
 If something unexpected were to happen in your namespace, such as accidental deletion of resources, would you be able to restore them?  Given a well-configured CI/CD pipeline, many resources can be easily recreated, but some resources require extra care.  In order to ensure that your apps can be fully restored after an unfortunate incident of some kind, implement the following preventative measures.
 
 #### Secrets
@@ -167,7 +175,7 @@ For more details, see the [Restoring Backup Volumes on OpenShift](https://docs.d
 **Images**
 Do your applications pull images directly from Docker Hub, ghcr.io, or another off-cluster source?  Can you be sure that the same version of the image will be available as long as you need it?  Sometimes older images are removed from container repositories, perhaps because they are no longer supported or due to security vulnerabilities.  To be sure that your images will be always available, and to protect against possible network issues preventing their retrieval, store your images in Artifactory.  See the Images section of this document for more information.
 
-## Periodic HA Testing
+## Periodic HA Testing<a name="ha-testing"></a>
 After configuring HPAs and PDBs for your applications, test them periodically to make sure that they work the way you expect and that your application remains available.  If you're testing in your Test or Dev environment, make sure they're configured the same as Prod so that you can test that same Prod configuration.
 * Delete a pod in a Deployment or StatefulSet
 * In a DB replica set, delete a secondary member
@@ -178,7 +186,7 @@ Does the application or DB remain available?
 **Load testing**
 If you need to run a load test against your application, first check with the Platform Services to ensure that the timing and scope of the test will not impact other users of the platform.
 
-## CI/CD Pipeline
+## CI/CD Pipeline<a name="cicd-pipeline"></a>
 Users of the platform have CI/CD pipelines using [Tekton](https://docs.developer.gov.bc.ca/deploy-an-application/#continuous-deployment-and-maintenance) (OpenShift Pipelines), GitHub Actions, and [ArgoCD](https://github.com/BCDevOps/openshift-wiki/tree/master/docs/ArgoCD).
 
 Review your pipelines from time to time.

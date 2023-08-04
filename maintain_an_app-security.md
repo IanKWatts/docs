@@ -1,5 +1,9 @@
 # Security
-There are numerous features that make the OpenShift platform more secure than most traditional hosting environments, but several areas require extra attention to ensure a secure application.
+There are numerous features that make the OpenShift platform more secure than most traditional hosting environments, but several areas require extra attention to ensure a secure application.  These include:
+* [Network Policies](#network-policies)
+* [RoleBindings](#rolebindings)
+* [Vault](#Vault)
+
 
 ## Network Policies
 By default, your namespaces are created with a "deny all" NetworkPolicy called 'platform-services-controlled-default', which will block all traffic from reaching your services.  This is a secure default configuration and you will have to create other network policies in order for your application to be usable.
