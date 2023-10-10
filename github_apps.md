@@ -4,12 +4,26 @@ _"GitHub Apps are tools that extend GitHub's functionality. GitHub Apps can do t
 
 https://docs.github.com/en/apps/using-github-apps/about-using-github-apps
 
-There are two GitHub Apps that are an important part of our automation, although they don't receive much attention and don't require much maintenance.  This document describes the apps that we use and how to install and configure them for a new GitHub organization.
+This document describes the apps that we use as well as how to install and configure a GitHub App.
 
-## GitHub Apps in BC Gov GitHub Organizations
-The two GitHub Apps that are part of our GitOps system are designed to complement each other and are both produced by Palantir Technologies.
+## Table of Contents
+1. [GitHub Apps in BC Gov GitHub Organizations](#github-apps-list)
+   1. [policy-bot](#policy-bot)
+   2. [bulldozer](#bulldozer)
+4. [Installation of the Application](#installation)
+5. [Creation of the GitHub App](#creation)
 
-### policy-bot
+## GitHub Apps in BC Gov GitHub Organizations<a name="github-apps-list"></a>
+The GitHub Apps in use are:
+* policy-bot
+* bulldozer
+* GitOpsCI
+
+policy-bot and bulldozer are both produced by Palantir Technologies and complement each other.
+
+GitOpsCI?  Need more info
+
+### policy-bot<a name="policy-bot"></a>
 https://github.com/palantir/policy-bot
 
 policy-bot is a GitHub App for enforcing approval policies on pull requests. It does this by creating a status check, which can be configured as a required status check.
@@ -17,7 +31,7 @@ policy-bot is a GitHub App for enforcing approval policies on pull requests. It 
 While GitHub natively supports required reviews, policy-bot provides more complex approval features:
 * Require reviews from specific users, organizations, or teams
 * Apply rules based on the files, authors, or branches involved in a pull request
-* Combine multiple approval rules with and and or conditions
+* Combine multiple approval rules with and/or conditions
 * Automatically approve pull requests that meet specific conditions
 
 Behavior is configured by a file in each repository. policy-bot also provides a UI to view the detailed approval status of any pull request.
@@ -75,8 +89,7 @@ When there is just a single approval rule, the 'or' condition is removed.
 ```
 policy:
   approval:
-    - or:
-      - one reviewer
+    - one reviewer
 ```
 
 For more information, see the documentation in the policy-bot repo.
@@ -84,7 +97,7 @@ For more information, see the documentation in the policy-bot repo.
 https://github.com/palantir/policy-bot/blob/develop/README.md
 
 
-### Bulldozer
+### bulldozer<a name="bulldozer"></a>
 While policy-bot defines the rules for the merging of PRs, bulldozer does the actual merge once the conditions are met.  Remember that policy-bot sets checks on a PR and if those checks have not passed, GitHub will not merge it.  So those conditions must be satisfied, as well as the conditions set in bulldozer.
 
 Consider the following bulldozer configuration file:
@@ -110,15 +123,15 @@ For more information, see the documentation in the bulldozer repo.
 https://github.com/palantir/bulldozer/blob/develop/README.md
 
 
-## Installation of the Application
-Behind the GitHub App in the GitHub org, there is an actual application deployed that can be reached by the GitHub servers.  This application must be deployed before that configuration can be done.
+## Installation of the Application<a name="installation"></a>
+Behind the GitHub App in the GitHub org, there is an actual application deployed that can be reached by the GitHub servers.  This application should be deployed before that configuration can be done.  There will be a little bit of configuration done to the deployment after the GitHub App is created.
 
 The deployment configuration will depend on the nature of the app, but in the case of policy-bot and bulldozer we deploy the Docker image of the app, as well as a Service, Route, and Secret.  The Service and Route allow GitHub to reach the app.  The Secret is used to set info related to the GitHub App, such as its "integration ID" and private key.
 
 **To Do: set up a gitops repo for argocd to manage these**
 
 
-## Creation of the GitHub App
+## Creation of the GitHub App<a name="creation"></a>
 A "GitHub App" is a configuration within a GitHub organization, not be confused with the actual application, which is running on our cluster.  After the actual application has been deployed, you can create the GitHub App.  You must be an owner or admin of the org.
 
 Start at the GitHub org page.
@@ -146,8 +159,8 @@ Click 'Create GitHub App' to complete the process.
 After creation, a banner message is shown, which contains a link to generate a private key.  Click the link, then Generate Private Key.  The key will be downloaded to your browser.  Save it and add it to the team's Vault account.  You must also make a record of the Webhook secret.
 
 **You're not done yet!** On the app settings page, click 'Install App' and click Install for the org.
-* Select installation only for select repositories
-* Select repositories
+* Select "Installation only for select repositories"
+* Select the repositories
 * Click 'Install'
 
 **Secrets**
