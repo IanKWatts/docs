@@ -13,17 +13,17 @@ To create a certificate separately from a Route, the user creates a Certificate 
 # Requirements
 * NetworkPolicy that allows traffic into the namespace from the Internet
 * NetworkPolicy that allows traffic within the namespace
-* Account with certificate provider, unless using Let's Encrypt
+* Account with certificate provider, if using a non-free service
 * Outbound access to the certificate authority (NSX clusters)
 * For testing: an application with a Service and a Route
 
 # Create an Issuer
 An Issuer defines how cert-manager will request TLS certificates. They are specific to a single namespace, so if you use certificates in multiple namespaces, you will need to create the Issuer in each of them.
 
-The Issuer CRD is provided by the 'cert-manager' operator and defines the type of issuer, which is one of acme, ca, selfSigned, vault, or venafi.  For Let's Encrypt, the type is 'acme'.  It will be configured with a contact email address, the name of the Secret for storing the issuer certificate, the URL of the issuer, and the verification method.
+The Issuer CRD is provided by the 'cert-manager' operator and defines the type of issuer, which is one of acme, ca, selfSigned, vault, or venafi.  For Let's Encrypt, the type is 'acme'.  It will be configured with a contact email address, the name of the Secret for storing the issuer certificate, the URL of the issuer, and the verification method.  For other issuer types, consult the [cert-manager Issuer documentation](https://cert-manager.io/docs/configuration/).
 
 ## Example Issuer using Let's Encrypt
-**Important note about Let's Encrypt:** Because Let's Encrypt has strict rate limits on certificate requests, use their staging service for any development and testing; only use their production service when ready to configure your own production environment.
+**Important note about Let's Encrypt:** Because Let's Encrypt has _strict rate limits_ on certificate requests, use their staging service for any development and testing; only use their production service when ready to configure your own production environment.
 
 Start by creating an Issuer for the Let's Encrypt staging environment.  Set the email field to a suitable value.  Example filename: `issuer.lets-encrypt-staging.yaml`
 ```
@@ -111,7 +111,6 @@ Add annotations to your Route.  Only the `issuer` field is required.  Other info
 
 ## Check order status
 After the Route has been modified, the operator will create several custom resources:
-* Certificate - Used to ensure an up to date and signed X.509 certificate is stored in the Secret specified in the `.spec.secretName` field of the Issuer.  The stored certificate will be renewed before it expires, when less than one third of its duration remains.
 * CertificateRequest - Used to request a signed certificate from one of the configured issuers
 * Order - Represents an Order with an ACME server
 * Challenge - Represents a Challenge request with an ACME server
@@ -145,10 +144,10 @@ For details on Certificate creation, see the [cert-manager Certificate documenta
 
 After the certificate is procured, a Secret will be created having the name set in the Certificate's `.spec.secretName` field and its public and private keys will be added to the Secret.
 
-Verify successful certificate creation by checking the output of `oc get orders` and `oc get certificates`.
+Verify successful certificate creation by checking the output of `oc get orders` and `oc get certificates`, and check the contents of the relevant Secret.
 
 # Prepare for Production
-For users of Let's Encrypt, once you have verified the configuration, create an Issuer for prod.  Here is an example of an Issuer using the production Let's Encrypt service.
+For users of Let's Encrypt, once you have verified the configuration, create an Issuer for prod.  Here is an example of an Issuer using the production Let's Encrypt service.  Note that the server URL is different.
 ```
 apiVersion: cert-manager.io/v1
 kind: Issuer
@@ -181,8 +180,9 @@ cert-manager automatically renews certificates based on the duration of the cert
 Depending on your issuer, there can be a variety of reasons for failure of certificate procurement or application.  Check the [troubleshooting docs](https://cert-manager.io/docs/troubleshooting/) for more information.
 
 # Remove a Certificate 
+A standalone certificate can be removed by deleting the Certificate resource, then deleting the associated Secret.  The Secret is not automatically deleted.
 
-# Demo
+To remove a certificate that was created by Route integration, delete the Route.  The Route may be recreated without the cert-manager annotations.
 
 # References
 #### cert-manager
