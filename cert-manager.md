@@ -1,28 +1,28 @@
 # Cert-Manager Usage for Self-Serve Certificate Management
 
-# Summary
+## Summary
 The cert-manager operator allows OpenShift users to request and apply TLS certificates to their web applications using automation, including GitOps.
 
-# Overview
+## Overview
 The cert-manager operator allows users to create and manage their own TLS certificates by way of custom resources in their namespaces.  A user can create an `Issuer` resource, which tells the operator how to request certificates.  Certificates may be requested and automatically applied to a Route in a single process or they may be requested and stored in a Secret from which to be applied as needed or for multiple Routes.
 
 To create a certificate and apply it to a Route in one step, the user adds annotations to the Route, specifying the Issuer to use and other information for the certificate.  The operator uses that information to interact with the certificate authority, automatically manages the certificate request and verification steps, and applies the certificate to the Route.
 
 To create a certificate separately from a Route, the user creates a Certificate resource.
 
-# Requirements
+## Requirements
 * NetworkPolicy that allows traffic into the namespace from the Internet
 * NetworkPolicy that allows traffic within the namespace
 * Account with certificate provider, if using a non-free service
 * Outbound access to the certificate authority (NSX clusters)
 * For testing: an application with a Service and a Route
 
-# Create an Issuer
+## Create an Issuer
 An Issuer defines how cert-manager will request TLS certificates. They are specific to a single namespace, so if you use certificates in multiple namespaces, you will need to create the Issuer in each of them.
 
 The Issuer CRD is provided by the 'cert-manager' operator and defines the type of issuer, which is one of acme, ca, selfSigned, vault, or venafi.  For Let's Encrypt, the type is 'acme'.  It will be configured with a contact email address, the name of the Secret for storing the issuer certificate, the URL of the issuer, and the verification method.  For other issuer types, consult the [cert-manager Issuer documentation](https://cert-manager.io/docs/configuration/).
 
-## Example Issuer using Let's Encrypt
+### Example Issuer using Let's Encrypt
 **Important note about Let's Encrypt:** Because Let's Encrypt has _strict rate limits_ on certificate requests, use their staging service for any development and testing; only use their production service when ready to configure your own production environment.
 
 Start by creating an Issuer for the Let's Encrypt staging environment.  Set the email field to a suitable value.  Example filename: `issuer.lets-encrypt-staging.yaml`
@@ -94,7 +94,7 @@ Events:                    <none>
 ```
 If the Issuer is not Ready, check the status message for more information.
 
-# Create a Certificate with Route Integration
+## Create a Certificate with Route Integration
 Assuming you have a Service and Route already prepared, begin the certificate creation process by modifying your Route.
 
 Add annotations to your Route.  Only the `issuer` field is required.  Other information can be included as needed.  For a full list of options, see the [openshift-routes documentation](https://github.com/cert-manager/openshift-routes/tree/main).
@@ -109,7 +109,7 @@ Add annotations to your Route.  Only the `issuer` field is required.  Other info
     cert-manager.io/subject-streetaddresses: "808 Douglas Street"    # Optional, no default
 ```
 
-## Check order status
+### Check order status
 After the Route has been modified, the operator will create several custom resources:
 * CertificateRequest - Used to request a signed certificate from one of the configured issuers
 * Order - Represents an Order with an ACME server
@@ -131,13 +131,13 @@ nginx-56hgc   True                True    lets-encrypt-staging   system:servicea
 ```
 If the order is not Approved and Ready, check the status message from 'oc describe' for more information.
 
-## Test your route
+### Test your route
 If you have used the Let's Encrypt **staging** service, you will see a warning about an untrusted certificate, but this is sufficient for testing your setup.  Verify that you can connect to the URL of your Route using HTTPS.
 
-## Certificate-related resources
+### Certificate-related resources
 After successful application of the certificate, the `CertificateRequest` and `Order` resources will still exist in your namespace, but the `Challenge` resource will be removed.
 
-# Create a Certificate, Standalone Method
+## Create a Certificate, Standalone Method
 Unlike the scenario described above, a certificate can be created by itself without integration with a Route.  This is done by creating a Certificate resource.  Because the operator will not be getting information from a Route for certain certificate parameters, all necessary information is set in the Certificate manifest.
 
 For details on Certificate creation, see the [cert-manager Certificate documentation](https://cert-manager.io/docs/usage/certificate/).
@@ -146,7 +146,7 @@ After the certificate is procured, a Secret will be created having the name set 
 
 Verify successful certificate creation by checking the output of `oc get orders` and `oc get certificates`, and check the contents of the relevant Secret.
 
-# Prepare for Production
+## Prepare for Production
 For users of Let's Encrypt, once you have verified the configuration, create an Issuer for prod.  Here is an example of an Issuer using the production Let's Encrypt service.  Note that the server URL is different.
 ```
 apiVersion: cert-manager.io/v1
@@ -173,24 +173,24 @@ To use the production Issuer in a Route, make sure to set the 'issuer' annotatio
 
 `cert-manager.io/issuer: lets-encrypt-prod`
 
-# Certificate Renewal
+## Certificate Renewal
 cert-manager automatically renews certificates based on the duration of the certificate.  For more information, see [Issuance triggers](https://cert-manager.io/docs/usage/certificate/#reissuance-triggered-by-expiry-renewal).
 
-# Troubleshooting
+## Troubleshooting
 Depending on your issuer, there can be a variety of reasons for failure of certificate procurement or application.  Check the [troubleshooting docs](https://cert-manager.io/docs/troubleshooting/) for more information.
 
-# Remove a Certificate 
+## Remove a Certificate 
 A standalone certificate can be removed by deleting the Certificate resource, then deleting the associated Secret.  The Secret is not automatically deleted.
 
 To remove a certificate that was created by Route integration, delete the Route.  The Route may be recreated without the cert-manager annotations.
 
-# References
-#### cert-manager
+## References
+##### cert-manager
 https://cert-manager.io/docs/
 
-#### Troubleshooting
+##### Troubleshooting
 https://cert-manager.io/docs/troubleshooting/
 
-#### OpenShift Route Support for cert-manager
+##### OpenShift Route Support for cert-manager
 https://github.com/cert-manager/openshift-routes
 
