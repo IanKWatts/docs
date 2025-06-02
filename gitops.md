@@ -228,7 +228,7 @@ https://github.com/bitnami/charts/tree/mariadb/20.2.0/bitnami/mariadb
 
 Save it to the new mariadb-helm directory.
 
-Download the [multi-source application template](argocd/app.helm-multi-source.yaml).  Edit the file, changing the LICENSEPLATE placeholder with your license plate.  Create the application in your tools namespace.
+Download the [multi-source application template](argocd/app.helm-multi-source.yaml).  Edit the file, replacing the LICENSEPLATE placeholder with your license plate.  Create the application in your tools namespace.
 ```
 oc -n ${LP}-tools apply -f app.mariadb-helm.yaml
 ```
@@ -240,9 +240,10 @@ Now update the values.yaml file and enter a value for `fullnameOverride` at line
 fullnameOverride: "testing"
 ```
 
-Save the file, commit it, and push to the GitOps repository.  View the resources in the Argo CD UI again and note the change to the resource names.  This is just a simple demonstration of setting your values file in a repo that is separate from the Helm chart.
+Save the file, commit it, and push to the GitOps repository.  View the resources in the Argo CD UI again and note the change to the resource names.  If you don't have a webhook in place or you don't see a change yet, click the 'Refresh' button.
 
-You can also set Helm values directly in the Argo CD application.  For more details, see the [Argo CD Helm documentation](https://argo-cd.readthedocs.io/en/stable/user-guide/helm/#values).
+This is just a simple demonstration of setting your values file in a repo that is separate from the Helm chart.  You can also set Helm values directly in the Argo CD application.  For more details, see the [Argo CD Helm documentation](https://argo-cd.readthedocs.io/en/stable/user-guide/helm/#values).
+
 
 ### Use Kustomize
 
