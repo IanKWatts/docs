@@ -1,5 +1,28 @@
 # Introduction to Argo CD for GitOps
 
+## Table of Contents
+- [Objectives](#objectives)
+- [Prerequisites](#prerequisites)
+- [Introduction](#introduction)
+- [Integration with the Private Cloud](#integration-with-the-private-cloud)
+- [Tasks](#tasks)
+  - [Log in to GitHub](#log-in-to-github)
+  - [Getting started](#getting-started)
+  - [Review your Argo CD project](#review-your-argo-cd-project)
+  - [Initial setup of the Git repository](#initial-setup-of-the-git-repository)
+  - [Create an Argo CD Application](#create-an-argo-cd-application)
+  - [Explore the functionality of Argo CD Applications](#explore-the-functionality-of-argo-cd-applications)
+  - [Auto-Sync](#auto-sync)
+  - [Use a Helm chart](#use-a-helm-chart)
+  - [Use Kustomize](#use-kustomize)
+  - [Troubleshooting](#troubleshooting)
+  - [Delete an Argo CD Application](#delete-an-argo-cd-application)
+  - [Apps of apps](#apps-of-apps)
+  - [Optional task: JWT tokens](#optional-task-jwt-tokens)
+  - [Optional task: Argo CD CLI](#optional-task-argo-cd-cli)
+  - [A complete pipeline](#a-complete-pipeline)
+- [References](#references)
+
 ## Objectives
 After completing this section, you should have an understanding of GitOps and how to use Argo CD to manage your applications and other resources.
 
@@ -273,7 +296,7 @@ This is just a simple demonstration of setting your values file in a repo that i
 
 
 
-
+## References
 
 [Private Cloud ArgoCD documentation](https://developer.gov.bc.ca/docs/default/component/platform-developer-docs/docs/automation-and-resiliency/argo-cd-usage/)
 
