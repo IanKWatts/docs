@@ -17,7 +17,7 @@
   - [Use Kustomize](#use-kustomize)
   - [Troubleshooting](#troubleshooting)
   - [Delete an Argo CD Application](#delete-an-argo-cd-application)
-  - [Apps of apps](#apps-of-apps)
+  - [App of apps](#app-of-apps)
   - [A complete pipeline](#a-complete-pipeline)
   - [Optional task: JWT tokens](#optional-task-jwt-tokens)
   - [Optional task: Argo CD CLI](#optional-task-argo-cd-cli)
@@ -44,7 +44,7 @@ Core principles include:
 Benefits include:
 * **Auditability:** Git history shows who changed what and when.
 * **Rollbacks:** Revert to a known-good state by checking out an earlier commit.
-* **Security:** Fewer people need direct access to the production cluster.
+* **Security:** Fewer people need direct access to production resources.
 * **Automation:** Reduces human error by codifying deployments.
 
 **What is Argo CD?**
@@ -98,7 +98,7 @@ Let's review some of the features of your project.  In the Argo CD UI, click 'Se
 
 The **Source Repositories** section defines the URLs that can be used as a source for your apps.  Two of them are for your automatically generated GitHub repository.  The "git@github" URL is an SSH-style URL.  We recommend that you use the HTTP-style URL in your applications, as support for SSH key access may be deprecated at some point in the future.  The third URL in the list is for an Artifactory caching repository that allows you to access Helm chart repositories from Docker.  It allows you to access any Helm OCI charts that are available at `registry-1.docker.io`.
 
-The **Source Namespaces** section defines the namespaces in which you can create Argo CD Applications.  When you create an application in the Argo CD UI, the Application resource is created in the Argo CD namespace, but the "apps in any namespace" feature allows you to create and manage applications in your own namespace.  You can even create an Argo CD application to manage your applications!  We'll look at that in the section below titled "Apps of apps".
+The **Source Namespaces** section defines the namespaces in which you can create Argo CD Applications.  When you create an application in the Argo CD UI, the Application resource is created in the Argo CD namespace, but the "apps in any namespace" feature allows you to create and manage applications in your own namespace.  You can even create an Argo CD application to manage your applications!  We'll look at that in the section below titled "App of apps".
 
 The **Destinations** section defines the namespaces in which you may have Argo CD manage resources.  This will be any of the four namespaces in your project.
 
@@ -280,7 +280,7 @@ This is just a simple demonstration of setting your values file in a repo that i
 
 
 
-### Apps of apps
+### App of apps
 
 
 
