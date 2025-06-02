@@ -1,0 +1,288 @@
+# Introduction to Argo CD for GitOps
+
+## Objectives
+After completing this section, you should have an understanding of GitOps and how to use Argo CD to manage your applications and other resources.
+
+## Prerequisites
+* The OpenShift `oc` CLI
+* A GitHub account
+
+## Introduction
+**What is GitOps?**
+
+_GitOps is a declarative approach to infrastructure and application management where Git repositories contain the desired state of the system, and automated processes continuously reconcile the actual state to match the desired state._
+
+Core principles include:
+* **Declarative configuration:** System state is defined using declarative files (e.g., Kubernetes YAML, Helm charts).
+* **Versioned and immutable storage:** Git holds the source of truth for your infrastructure and workloads.
+* **Automatic reconciliation:** A GitOps agent (e.g., Argo CD, Flux) watches the Git repo and ensures the deployed environment matches what’s in Git.
+* **Software agents:** No manual `kubectl apply`; the GitOps tool continuously enforces the desired state.
+
+Benefits include:
+* **Auditability:** Git history shows who changed what and when.
+* **Rollbacks:** Revert to a known-good state by checking out an earlier commit.
+* **Security:** Fewer people need direct access to the production cluster.
+* **Automation:** Reduces human error by codifying deployments.
+
+**What is Argo CD?**
+
+Argo CD is a declarative, GitOps continuous delivery tool for Kubernetes.  It processes plain YAML/JSON manifests, Kustomize applications, Helm charts, and more.
+
+Argo CD automates the deployment of the desired application states in the specified target environments. Application deployments can track updates to branches, tags, or be pinned to a specific version of manifests at a Git commit.
+
+Argo CD ensures that deployed resources match the declared state, including the creation, modification, and optionally deletion of resources.  Synchronization of resources can be automatic or manual.
+
+## Integration with the Private Cloud
+The Platform Services team maintains a dedicated instance of Argo CD for our users.
+
+The Private Cloud clusters use a custom operator to create and manage resources related to project teams' usage of Argo CD.  When a user creates a `GitOpsTeam` resource, the operator automatically detects it and does all necessary setup, including the creation of a Git repository, configuration of repository access, creation of a project in Argo CD, and the creation of Keycloak groups used for controlling access to the project in the Argo CD UI.  In addition to automating the setup, the operator also ensures consistent configuration for all projects and enforces certain security constratints.  Users can modify the access rules for the Git repository and the Argo CD UI by editing their `GitOpsTeam`.
+
+## Tasks
+
+### Log in to GitHub
+Log in to GitHub in order to access your new Git repository and the associated project in Argo CD.  Argo CD uses SSO and can be accessed by either GitHub IDs or IDIRs.  For the purposes of this exercise, we will use the GitHub ID for both.
+
+
+### Getting started - create a GitOpsTeam
+The GitOpsTeam is your vehicle for GitOps configuration.  Start by downloading a copy of the [GitOpsTeam template](argocd/gitopsteam_template.yaml).
+
+The GitOpsTeam defines the users that will have access to the GitOps repository (gitOpsMembers) and the users that will have access to the project in the Argo CD UI (projectMembers).  A GitOpsTeam must be created in the **tools namespace**.
+
+* Open the file in your text editor of choice.  
+* Set `/metadata/name` to your project license plate, such as abc123
+* Set `/metadata/namespace` to your tools namespace, such as abc123-tools
+* Add your GitHub ID in `/spec/gitOpsMembers/admins`
+* Add your GitHub ID in `/spec/projectMembers/maintainers` as "yourID@github"
+* If you have an IDIR account, add it in `/spec/projectMembers/maintainers` as your email address, such as `first.last@gov.bc.ca`
+* Remove all sample entries
+* Save the file and apply it
+```
+oc apply -f gitopsteam_template.yaml
+```
+
+**Note:** If you are not already a member of the 'bcgov-c' GitHub organization, you will be sent an email invitation to join it.  You will have to join the organization before you can access your repository.
+
+**Pro Tip:** If you set an environment variable for your project's license plate, you'll be able to copy and paste some of the commands below.
+
+```
+export LICENSE_PLATE=abc123
+```
+
+Verify that you can access the [Argo CD UI](https://gitops-shared.apps.silver.devops.gov.bc.ca).  Unless you already have access from another project, there will be no apps listed.
+
+### Review your Argo CD project
+Let's review some of the features of your project.  In the Argo CD UI, click 'Settings' --> 'Projects' --> your project
+
+The **Source Repositories** section defines the URLs that can be used as a source for your apps.  Two of them are for your automatically generated GitHub repository.  The "git@github" URL is an SSH-style URL.  We recommend that you use the HTTP-style URL in your applications, as support for SSH key access may be deprecated at some point in the future.  The third URL in the list is for an Artifactory caching repository that allows you to access Helm chart repositories from Docker.  It allows you to access any Helm OCI charts that are available at `registry-1.docker.io`.
+
+The **Source Namespaces** section defines the namespaces in which you can create Argo CD Applications.  When you create an application in the Argo CD UI, the Application resource is created in the Argo CD namespace, but the "apps in any namespace" feature allows you to create and manage applications in your own namespace.  You can even create an Argo CD application to manage your applications!  We'll look at that in the section below titled "Apps of apps".
+
+The **Destinations** section defines the namespaces in which you may have Argo CD manage resources.  This will be any of the four namespaces in your project.
+
+The resource allow and deny lists are there for general security.  For example, you cannot create new namespaces in OpenShift or modify your ResourceQuota.
+
+Click the 'Applications' link to return to the main view.
+
+
+### Initial setup of the Git repository
+Verify that you can access your new repository, which is called "tenant-gitops-LICENSEPLATE".
+```
+https://github.com/bcgov-c/tenant-gitops-${LICENSE_PLATE}
+```
+
+The repository is empty, so you will now clone it and add some content.
+```
+git clone https://github.com/bcgov-c/tenant-gitops-${LICENSE_PLATE}
+cd tenant-gitops-${LICENSE_PLATE}
+```
+Create a directory for your first app:
+```
+mkdir app1
+```
+Create a YAML manifest for a ConfigMap:
+```
+cat <<END > app1/configmap.app1.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app1
+  namespace: ${LICENSE_PLATE}-tools
+data: |
+  foo: bar
+END
+```
+Add the new directory and push it to your repository.
+```
+git add .
+git commit -a -m "Initial repo setup"
+git push origin
+```
+
+### Create an Argo CD Application
+Use the Argo CD UI to create a new application that is configured for the directory that you created in your GitOps repository.
+- Click the 'New App' button and enter the following information...
+- General
+    - Application Name: app1
+    - Project Name: (select your project from dropdown)
+- Source
+    - Repository URL: https://github.com/bcgov-c/tenant-gitops-LICENSEPLATE
+    - Path: app1
+- Destination:
+    - Cluster URL: (select from dropdown: https://kubernetes.default.svc)
+    - Namespace: LICENSEPLATE-tools
+- Click 'Create'
+
+
+### Explore the functionality of Argo CD Applications
+Click on your new app.  Just above the main pane, note the status boxes: App Health and Sync Status
+
+Click on the 'Diff' button.  The right side of the window shows the desired state and the left side shows the actual state, which will be blank until you sync the app.
+
+Click the 'X' button in the upper right corner to close the app details view.
+
+Click the 'Sync' button.  You will be prompted for confirmation in the right sidebar.  Click 'Synchronize'.  You should see the App Health show as "Healthy", Sync Status as "Synced", and another field, Last Sync, showing as "Sync OK".  If not, click the 'Sync Status' button to see what the issue is.
+
+In the OpenShift console, go to the ConfigMaps listing for your tools namespace.  You should see the 'app1' ConfigMap listed there.  Click on the ConfigMap to view it.
+
+#### Update your app
+Update the YAML manifest for the ConfigMap, adding another key/value pair.
+```
+  foo: bar
+  boo: far
+```
+Save the file, commit, and push to your GitHub repo.
+
+In the Argo CD UI, in the application view, click the 'Refresh' button.  The Sync Status should now show as "OutOfSync".
+
+Click on the 'Diff' button.  The right side of the diff view shows the desired state and the left side shows the actual state.  For a cleaner view, check the "Compact diff" checkbox.
+
+Close the diff view by clicking the 'X' in the upper right corner.
+
+Sync the app, then look at the ConfigMap again in the OpenShift console.  You should now see both key/value pairs in the ConfigMap.
+
+Delete the ConfigMap from the namespace and then return to the app view in the Argo CD UI.  It should again show as out of sync, but this time the 'app1' ConfigMap has a small yellow ghost icon on it to indicate that the resource is missing from the namespace.  Click 'Sync' again to recreate the ConfigMap.
+
+### Auto-Sync
+After initial setup, Argo CD applications are generally set to sync automatically, and this is what makes it a powerful tool.  Argo CD caches the manifests from the Git repository and rechecks every few minutes to see if the cache is still valid.  With auto-sync enabled, any change to the manifests in the Git repository will be automatically synced to your OpenShift namespace as soon as the change is detected.
+
+Enable auto-sync in your app by clicking the 'Details' button.  In the Sync Policy section, click the 'Enable Auto-Sync' button.
+
+After enabling auto-sync, you have the option to also enable pruning and self-healing.
+* Pruning means that if a resource is managed by Argo CD, but is then removed from the GitOps repository, Argo CD will delete the resource from the namespace.  This is usually a good option, but you may want to leave it disabled in certain cases.
+* Self-Heal means that if the resource is updated directly in OpenShift, Argo CD will change it back to match the desired state from the GitOps repository. This is also usually a good option.
+* When making sensitive changes, such as major upgrades, you may want to disable auto-sync until the process is complete so that you can carefully control the sequence of changes or to temporarily change the configuration.
+
+#### Create a GitHub webhook
+You may not want to wait for Argo CD to refresh its cache before your changes are applied.  You can do this by configuring your GitHub repository to notify Argo CD that there has been a change.  This requires admin access to the Git repository.
+
+In the GitHub UI for your repository, click 'Settings' --> 'Webhooks' --> 'Add webhook'
+
+Enter the following information:
+* Payload URL: https://gitops-shared.apps.silver.devops.gov.bc.ca/api/webhook
+* Content type: application/json
+* Secret: bcgovprivatecloud
+* Click 'Add webhook'
+
+By default the webhook is called on any 'push' event, which is basically any commit.  If you would like to narrow down the events that trigger the webhook, click the option for "let me select individual events", then select the types of events you need.
+
+### Use a Helm chart
+#### What is Helm?
+From the [Helm website](https://helm.sh/):
+
+_Helm helps you manage Kubernetes applications — Helm Charts help you define, install, and upgrade even the most complex Kubernetes application.  Charts are easy to create, version, share, and publish — so start using Helm and stop the copy-and-paste.  Helm is a graduated project in the CNCF and is maintained by the Helm community._
+
+Helm is a sort of package manager for Kubernetes applications.  You can create your own Helm charts or use those created by others.  There are many publicly available Helm chart repositories.  Any of the Helm repositories that are managed in Docker Hub are accessible from Argo CD; all other sources aside from your GitOps repository are not accessible from Argo CD.
+
+Because this exercise is about Argo CD and its usage in the Private Cloud platform, we won't get into the details of Helm charts themselves, but will configure an Argo CD application that uses a third-party chart.
+
+First, we will create an application that uses default values, then we will create one that uses a values file that we will maintain in our GitOps repository.
+
+#### Helm application with default values
+In Argo CD, click 'New App' and enter the following values:
+- General
+    - Application Name: helm-default
+    - Project Name: (select your project from dropdown)
+- Source
+    - Repository URL: artifacts.developer.gov.bc.ca/docker-helm-oci-remote
+    - Chart: bitnamicharts/mariadb
+    - Version (unlabeled field next to Chart): 20.2.0
+- Destination:
+    - Cluster URL: (select from dropdown: https://kubernetes.default.svc)
+    - Namespace: LICENSEPLATE-tools
+- Click 'Create'
+
+Click on the newly created application.  We didn't select auto-sync, so all of the resources produced by the Helm chart will show as missing and out of sync.  This particular chart produces a ConfigMap, Secret, Services, ServiceAccount, StatefulSet, NetworkPolicy, and PodDisruptionBudget.  That was easy, but we almost certainly want to override some of the default settings, so we'll take a copy of the default values file, make some changes to it, and add it to our GitOps repository.  Then we'll create a new application that uses our values file for manifest generation.
+
+Delete the 'helm-default' application.
+
+#### Helm application with local values
+In order to create an Argo CD application that directly processes a remote Helm repository while using a values file from our gitops repository, we will create a multi-source application.  However, the UI does not currently support the creation of multi-source applications, so we will create a YAML manifest and apply it to our tools namespace (you can create applications in any of your namespaces).
+
+First, create a directory in your GitOps repository for the new Helm application.
+```
+mkdir mariadb-helm
+```
+Download the 'values.yaml' file from the Git repository that is home to the Helm chart that we are using:
+
+https://github.com/bitnami/charts/tree/mariadb/20.2.0/bitnami/mariadb
+
+Save it to the new mariadb-helm directory.
+
+Download the [multi-source application template](argocd/app.helm-multi-source.yaml).  Edit the file, changing the LICENSEPLATE placeholder with your license plate.  Create the application in your tools namespace.
+```
+oc -n ${LP}-tools apply -f app.mariadb-helm.yaml
+```
+
+In the Argo CD UI, click on the new application and view the resources that would be created.  Note the names of the resources ("mariadb").
+
+Now update the values.yaml file and enter a value for `fullnameOverride` at line 47.  For example:
+```
+fullnameOverride: "testing"
+```
+
+Save the file, commit it, and push to the GitOps repository.  View the resources in the Argo CD UI again and note the change to the resource names.  This is just a simple demonstration of setting your values file in a repo that is separate from the Helm chart.
+
+You can also set Helm values directly in the Argo CD application.  For more details, see the [Argo CD Helm documentation](https://argo-cd.readthedocs.io/en/stable/user-guide/helm/#values).
+
+### Use Kustomize
+
+
+
+### Troubleshooting
+
+
+
+### Delete an Argo CD Application
+
+
+
+### Apps of apps
+
+
+
+### Optional task: JWT tokens
+
+
+
+### Optional task: Argo CD CLI
+
+
+
+### A complete pipeline
+
+
+
+
+
+[Private Cloud ArgoCD documentation](https://developer.gov.bc.ca/docs/default/component/platform-developer-docs/docs/automation-and-resiliency/argo-cd-usage/)
+
+[Argo CD](https://argo-cd.readthedocs.io/en/stable/)
+
+[Helm](https://helm.sh/)
+
+[Kustomize](https://kustomize.io/)
+
+
+
+
+
