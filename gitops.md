@@ -18,9 +18,9 @@
   - [Troubleshooting](#troubleshooting)
   - [Delete an Argo CD Application](#delete-an-argo-cd-application)
   - [Apps of apps](#apps-of-apps)
+  - [A complete pipeline](#a-complete-pipeline)
   - [Optional task: JWT tokens](#optional-task-jwt-tokens)
   - [Optional task: Argo CD CLI](#optional-task-argo-cd-cli)
-  - [A complete pipeline](#a-complete-pipeline)
 - [References](#references)
 
 ## Objectives
@@ -66,7 +66,7 @@ The Private Cloud clusters use a custom operator to create and manage resources 
 Log in to GitHub in order to access your new Git repository and the associated project in Argo CD.  Argo CD uses SSO and can be accessed by either GitHub IDs or IDIRs.  For the purposes of this exercise, we will use the GitHub ID for both.
 
 
-### Getting started - create a GitOpsTeam
+### Getting started
 The GitOpsTeam is your vehicle for GitOps configuration.  Start by downloading a copy of the [GitOpsTeam template](argocd/gitopsteam_template.yaml).
 
 The GitOpsTeam defines the users that will have access to the GitOps repository (gitOpsMembers) and the users that will have access to the project in the Argo CD UI (projectMembers).  A GitOpsTeam must be created in the **tools namespace**.
@@ -284,15 +284,15 @@ This is just a simple demonstration of setting your values file in a repo that i
 
 
 
+### A complete pipeline
+
+
+
 ### Optional task: JWT tokens
 
 
 
 ### Optional task: Argo CD CLI
-
-
-
-### A complete pipeline
 
 
 
