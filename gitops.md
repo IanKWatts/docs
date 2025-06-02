@@ -93,8 +93,10 @@ export LICENSE_PLATE=abc123
 
 Verify that you can access the [Argo CD UI](https://gitops-shared.apps.silver.devops.gov.bc.ca).  Unless you already have access from another project, there will be no apps listed.
 
-### Review your Argo CD project
-Let's review some of the features of your project.  In the Argo CD UI, click 'Settings' --> 'Projects' --> your project
+### Review your Argo CD projects
+There are two Argo CD projects associated with each GitOpsTeam.  The name of the first one is your license plate; this is the default project.  The second is named LICENSE_PLATE-nonprod.  This project has access to your dev, test, and tools namespaces, but not prod.  If your organization limits access to production resources and you have developers that should only have access to non-prod resources, add them to the 'nonprod' list under 'projectMembers'.
+
+Lee's review some of the features of your default project.  In the Argo CD UI, click 'Settings' --> 'Projects' --> LICENSE_PLATE
 
 The **Source Repositories** section defines the URLs that can be used as a source for your apps.  Two of them are for your automatically generated GitHub repository.  The "git@github" URL is an SSH-style URL.  We recommend that you use the HTTP-style URL in your applications, as support for SSH key access may be deprecated at some point in the future.  The third URL in the list is for an Artifactory caching repository that allows you to access Helm chart repositories from Docker.  It allows you to access any Helm OCI charts that are available at `registry-1.docker.io`.
 
@@ -103,6 +105,8 @@ The **Source Namespaces** section defines the namespaces in which you can create
 The **Destinations** section defines the namespaces in which you may have Argo CD manage resources.  This will be any of the four namespaces in your project.
 
 The resource allow and deny lists are there for general security.  For example, you cannot create new namespaces in OpenShift or modify your ResourceQuota.
+
+Click 'Projects' again and click on your nonprod project.  Note that the Source Namespaces and Destinations lists include only the non-prod namespaces.  Additionally, the Namespace Resource Deny List includes `*/warden.devops.gov.bc.ca`; this prevents applications in the nonprod project from modifying the GitOpsTeam.
 
 Click the 'Applications' link to return to the main view.
 
@@ -253,7 +257,7 @@ Save it to the new mariadb-helm directory.
 
 Download the [multi-source application template](argocd/app.helm-multi-source.yaml).  Edit the file, replacing the LICENSEPLATE placeholder with your license plate.  Create the application in your tools namespace.
 ```
-oc -n ${LP}-tools apply -f app.mariadb-helm.yaml
+oc -n ${LICENSE_PLATE}-tools apply -f app.mariadb-helm.yaml
 ```
 
 In the Argo CD UI, click on the new application and view the resources that would be created.  Note the names of the resources ("mariadb").
